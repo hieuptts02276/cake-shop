@@ -1,88 +1,124 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-type User = {
-  id: number;
-  fullName: string;
-  email: string;
-  birthYear: number;
-  pendingApproval: boolean;
-};
+export default function ApprovalPage() {
+  const navigate = useNavigate();
 
-export default function AdminApprovalPage() {
-  const [users, setUsers] = useState<User[]>(() => {
-    const data = JSON.parse(localStorage.getItem("users") || "[]") as User[];
-    return data.filter((u) => u.pendingApproval === true);
-  });
+  const [approved, setApproved] =
+    useState(false);
 
-  const loadUsers = () => {
-    const data = JSON.parse(localStorage.getItem("users") || "[]") as User[];
+  const admin = JSON.parse(
+    localStorage.getItem("currentUser") ||
+      "null"
+  );
 
-    setUsers(data.filter((u) => u.pendingApproval === true));
-  };
+  const pendingUser = JSON.parse(
+    localStorage.getItem("pendingUser") ||
+      "null"
+  );
 
-  const approveUser = (userId: number) => {
-    const allUsers = JSON.parse(localStorage.getItem("users") || "[]") as User[];
+  if (
+    !admin ||
+    admin.role !== "admin"
+  ) {
+    navigate("/login");
+    return null;
+  }
 
-    const updated = allUsers.map((u) =>
-      u.id === userId
-        ? {
-            ...u,
-            pendingApproval: false,
-          }
-        : u
+  const approveUser = () => {
+    const users = JSON.parse(
+      localStorage.getItem("users") ||
+        "[]"
     );
 
-    localStorage.setItem("users", JSON.stringify(updated));
+    users.push({
+      ...pendingUser,
+      pendingApproval: false
+    });
 
-    loadUsers();
-  };
+    localStorage.setItem(
+      "users",
+      JSON.stringify(users)
+    );
 
-  const rejectUser = (userId: number) => {
-    const allUsers = JSON.parse(localStorage.getItem("users") || "[]") as User[];
+    localStorage.removeItem(
+      "pendingUser"
+    );
 
-    const updated = allUsers.filter((u) => u.id !== userId);
-
-    localStorage.setItem("users", JSON.stringify(updated));
-
-    loadUsers();
+    setApproved(true);
   };
 
   return (
-    <div>
-      <h1>Duyệt Tài Khoản Dưới 13 Tuổi</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Họ Tên</th>
-            <th>Email</th>
-            <th>Năm Sinh</th>
-            <th>Hành Động</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.length === 0 ? (
-            <tr>
-              <td colSpan={4}>Không có tài khoản cần duyệt.</td>
-            </tr>
+    <div className="container mt-5">
+      <div className="card shadow">
+        <div className="card-body">
+
+          {!approved ? (
+            <>
+              <h2>
+                Yêu cầu phê duyệt tài khoản
+              </h2>
+
+              <div className="alert alert-warning">
+                Tài khoản này dưới 13 tuổi.
+                Admin cần chấp thuận trước
+                khi tài khoản được tạo.
+              </div>
+
+              <p>
+                <b>Họ tên:</b>{" "}
+                {pendingUser.fullName}
+              </p>
+
+              <p>
+                <b>Email:</b>{" "}
+                {pendingUser.email}
+              </p>
+
+              <p>
+                <b>Năm sinh:</b>{" "}
+                {pendingUser.birthYear}
+              </p>
+
+              <button
+                className="btn btn-success me-2"
+                onClick={approveUser}
+              >
+                Chấp thuận
+              </button>
+
+              <button
+                className="btn btn-danger"
+                onClick={() => {
+                  localStorage.removeItem(
+                    "pendingUser"
+                  );
+
+                  navigate("/");
+                }}
+              >
+                Từ chối
+              </button>
+            </>
           ) : (
-            users.map((user) => (
-              <tr key={user.id}>
-                <td>{user.fullName}</td>
-                <td>{user.email}</td>
-                <td>{user.birthYear}</td>
-                <td>
-                  <button type="button" onClick={() => approveUser(user.id)}>
-                    Chấp thuận
-                  </button>
-                  <button type="button" onClick={() => rejectUser(user.id)}>
-                    Từ chối
-                  </button>
-                </td>
-              </tr>
-            ))
+            <>
+              <div className="alert alert-success">
+                Admin đã chấp thuận tài
+                khoản thành công.
+              </div>
+
+              <button
+                className="btn btn-primary"
+                onClick={() =>
+                  navigate("/login")
+                }
+              >
+                Đến trang đăng nhập
+              </button>
+            </>
           )}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }

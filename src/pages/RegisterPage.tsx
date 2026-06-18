@@ -21,93 +21,131 @@ export default function RegisterPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [role, setRole] = useState<Role>("user");
+  const [showAdminApproval, setShowAdminApproval] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
+
+  const handleAdminApprovalLogin = () => {
+    const users: User[] = JSON.parse(
+      localStorage.getItem("users") || "[]"
+    );
+
+    const admin = users.find(
+      (u) =>
+        u.role === "admin" &&
+        u.email === adminEmail &&
+        u.password === adminPassword
+    );
+
+    if (!admin) {
+      alert("Tài khoản Admin không hợp lệ");
+      return;
+    }
+
+    if (!pendingUser) {
+      alert("Không tìm thấy tài khoản cần duyệt");
+      return;
+    }
+
+    localStorage.setItem(
+      "pendingUser",
+      JSON.stringify(pendingUser)
+    );
+
+    localStorage.setItem(
+      "currentUser",
+      JSON.stringify(admin)
+    );
+
+    alert("Admin đăng nhập thành công");
+    navigate("/approval");
+  };
 
   const handleRegister: FormEventHandler<HTMLFormElement> = (e) => {
-e.preventDefault();
-const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
+    e.preventDefault();
+    const users: User[] = JSON.parse(localStorage.getItem("users") || "[]");
 
-if (users.some((u) => u.email === email)) {
-  alert("Email đã tồn tại");
-  return;
-}
+    if (users.some((u) => u.email === email)) {
+      alert("Email đã tồn tại");
+      return;
+    }
 
-const currentYear =
-  new Date().getFullYear();
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - Number(birthYear);
 
-const age =
-  currentYear -
-  Number(birthYear);
+    const newUser: User = {
+      id: Date.now(),
+      fullName,
+      birthYear: Number(birthYear),
+      email,
+      password,
+      role,
+      pendingApproval: role === "user" && age < 13
+    };
 
-if (age < 13) {
-  const adminEmail = prompt(
-    "Tài khoản này dưới 13 tuổi.\nNhập email Admin để xác nhận:"
-  );
+    if (age < 13 && role === "user") {
+      setPendingUser(newUser);
+      setShowAdminApproval(true);
+      return;
+    }
 
-  const adminPassword = prompt(
-    "Nhập mật khẩu Admin:"
-  );
+    users.push(newUser);
 
-  if (
-    !adminEmail ||
-    !adminPassword
-  ) {
-    alert(
-      "Chưa xác nhận bởi Admin"
+    localStorage.setItem(
+      "users",
+      JSON.stringify(users)
     );
-    return;
+
+    alert("Đăng ký thành công");
+    navigate("/login");
+  };
+
+  if (showAdminApproval) {
+    return (
+      <div className="container mt-5">
+        <div className="card shadow mx-auto" style={{ maxWidth: 500 }}>
+          <div className="card-body">
+            <h3 className="text-center">Xác nhận của Admin</h3>
+
+            <p className="text-danger">
+              Người dùng dưới 13 tuổi cần
+              Admin xác nhận trước khi tạo
+              tài khoản.
+            </p>
+
+            <input
+              className="form-control mb-3"
+              placeholder="Email Admin"
+              value={adminEmail}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setAdminEmail(e.target.value)
+              }
+            />
+
+            <input
+              type="password"
+              className="form-control mb-3"
+              placeholder="Mật khẩu Admin"
+              value={adminPassword}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setAdminPassword(e.target.value)
+              }
+            />
+
+            <button
+              className="btn btn-primary w-100"
+              onClick={handleAdminApprovalLogin}
+            >
+              Đăng nhập Admin
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const admin = users.find(
-    (u: User) =>
-      u.role === "admin" &&
-      u.email === adminEmail &&
-      u.password ===
-        adminPassword
-  );
-
-  if (!admin) {
-    alert(
-      "Thông tin Admin không hợp lệ"
-    );
-    return;
-  }
-}
-
-const newUser = {
-  id: Date.now(),
-  fullName,
-  birthYear: Number(birthYear),
-  email,
-  password,
-
-  role,
-
-  pendingApproval:
-    role === "user" &&
-    age < 13
-};
-
-users.push(newUser);
-
-localStorage.setItem(
-  "users",
-  JSON.stringify(users)
-);
-
-if (age < 13) {
-  alert(
-    "Tài khoản đang chờ Admin phê duyệt vì dưới 13 tuổi."
-  );
-} else {
-  alert("Đăng ký thành công");
-}
-
-navigate("/login");
-
-
-};
-
-return ( <div className="container mt-5">
+  return ( <div className="container mt-5">
 <div className="card shadow mx-auto" style={{ maxWidth: 600 }}> <div className="card-body"> <h2 className="text-center mb-4">Đăng ký</h2>
 
 
