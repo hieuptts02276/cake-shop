@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+interface PendingCheckoutItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface PendingCheckout {
+  age: number;
+  total: number;
+  items: PendingCheckoutItem[];
+}
+
 export default function ApprovalPage() {
   const navigate = useNavigate();
 
-  const [approved, setApproved] =
-    useState(false);
+  const [approved, setApproved] = useState(false);
 
   const admin = JSON.parse(
     localStorage.getItem("currentUser") ||
@@ -17,6 +29,11 @@ export default function ApprovalPage() {
       "null"
   );
 
+  const pendingCheckout = JSON.parse(
+    localStorage.getItem("pendingCheckout") ||
+      "null"
+  ) as PendingCheckout | null;
+
   if (
     !admin ||
     admin.role !== "admin"
@@ -25,77 +42,114 @@ export default function ApprovalPage() {
     return null;
   }
 
-  const approveUser = () => {
-    const users = JSON.parse(
-      localStorage.getItem("users") ||
-        "[]"
-    );
+  if (!pendingUser && !pendingCheckout) {
+    navigate("/");
+    return null;
+  }
 
-    users.push({
-      ...pendingUser,
-      pendingApproval: false
-    });
+  const approveRequest = () => {
+    if (pendingUser) {
+      const users = JSON.parse(
+        localStorage.getItem("users") ||
+          "[]"
+      );
 
-    localStorage.setItem(
-      "users",
-      JSON.stringify(users)
-    );
+      users.push({
+        ...pendingUser,
+        pendingApproval: false,
+      });
 
-    localStorage.removeItem(
-      "pendingUser"
-    );
+      localStorage.setItem(
+        "users",
+        JSON.stringify(users)
+      );
+      localStorage.removeItem("pendingUser");
+    }
+
+    if (pendingCheckout) {
+      localStorage.removeItem("pendingCheckout");
+    }
 
     setApproved(true);
+  };
+
+  const rejectRequest = () => {
+    if (pendingUser) {
+      localStorage.removeItem("pendingUser");
+    }
+
+    if (pendingCheckout) {
+      localStorage.removeItem("pendingCheckout");
+    }
+
+    navigate("/");
   };
 
   return (
     <div className="container mt-5">
       <div className="card shadow">
         <div className="card-body">
-
           {!approved ? (
             <>
-              <h2>
-                Yêu cầu phê duyệt tài khoản
-              </h2>
+              {pendingUser ? (
+                <>
+                  <h2>Yêu cầu phê duyệt tài khoản</h2>
 
-              <div className="alert alert-warning">
-                Tài khoản này dưới 13 tuổi.
-                Admin cần chấp thuận trước
-                khi tài khoản được tạo.
-              </div>
+                  <div className="alert alert-warning">
+                    Tài khoản này dưới 13 tuổi. Admin cần chấp thuận trước khi tài khoản được tạo.
+                  </div>
 
-              <p>
-                <b>Họ tên:</b>{" "}
-                {pendingUser.fullName}
-              </p>
+                  <p>
+                    <b>Họ tên:</b> {pendingUser.fullName}
+                  </p>
 
-              <p>
-                <b>Email:</b>{" "}
-                {pendingUser.email}
-              </p>
+                  <p>
+                    <b>Email:</b> {pendingUser.email}
+                  </p>
 
-              <p>
-                <b>Năm sinh:</b>{" "}
-                {pendingUser.birthYear}
-              </p>
+                  <p>
+                    <b>Năm sinh:</b> {pendingUser.birthYear}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2>Yêu cầu phê duyệt thanh toán</h2>
+
+                  <div className="alert alert-warning">
+                    Khách hàng dưới 13 tuổi cần admin chấp nhận trước khi thanh toán.
+                  </div>
+
+                  <p>
+                    <b>Tuổi khách hàng:</b> {pendingCheckout?.age}
+                  </p>
+
+                  <p>
+                    <b>Tổng đơn hàng:</b> {pendingCheckout?.total.toLocaleString()} đ
+                  </p>
+
+                  <div className="mb-3">
+                    <b>Sản phẩm:</b>
+                    <ul className="list-group mt-2">
+                      {pendingCheckout?.items.map((item) => (
+                        <li key={item.id} className="list-group-item p-2">
+                          {item.name} - {item.quantity} x {item.price.toLocaleString()} đ
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
 
               <button
                 className="btn btn-success me-2"
-                onClick={approveUser}
+                onClick={approveRequest}
               >
                 Chấp thuận
               </button>
 
               <button
                 className="btn btn-danger"
-                onClick={() => {
-                  localStorage.removeItem(
-                    "pendingUser"
-                  );
-
-                  navigate("/");
-                }}
+                onClick={rejectRequest}
               >
                 Từ chối
               </button>
@@ -103,17 +157,14 @@ export default function ApprovalPage() {
           ) : (
             <>
               <div className="alert alert-success">
-                Admin đã chấp thuận tài
-                khoản thành công.
+                Admin đã chấp thuận yêu cầu thành công.
               </div>
 
               <button
                 className="btn btn-primary"
-                onClick={() =>
-                  navigate("/login")
-                }
+                onClick={() => navigate("/")}
               >
-                Đến trang đăng nhập
+                Đến trang chủ
               </button>
             </>
           )}
