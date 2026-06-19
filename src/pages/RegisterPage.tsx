@@ -160,14 +160,24 @@ export default function RegisterPage() {
         />
 
         <input
-          type="number"
-          className="form-control mb-3"
-          placeholder="Năm sinh"
-          value={birthYear}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setBirthYear(e.target.value)
-          }
-        />
+  type="number"
+  className="form-control mb-1"
+  placeholder="Năm sinh"
+  value={birthYear}
+  onChange={(e: ChangeEvent<HTMLInputElement>) =>
+    setBirthYear(e.target.value)
+  }
+  required
+/>
+
+{/* Cảnh báo luôn hiển thị khi vào trang */}
+<p className="text-danger small mt-1">
+  Người dùng dưới 13 tuổi cần có sự xác nhận của Admin trước khi tạo tài khoản. 
+  Xem thêm chi tiết tại{" "}
+  <a href="/age-requirements" className="text-decoration-underline">
+    trang yêu cầu độ tuổi
+  </a>.
+</p>
 
         <input
           className="form-control mb-3"

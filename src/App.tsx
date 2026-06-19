@@ -13,7 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminCakePage from "./pages/AdminCakePage";
 import AdminOrderPage from "./pages/AdminOrdersPage";
 import AdminApprovalPage from "./pages/AdminApprovalPage";
-
+import AgeRequirements from "./pages/AgeRequirements";
 function App() {
   return (
     <BrowserRouter>
@@ -31,6 +31,7 @@ function App() {
         <Route path="/admin/cakes" element={<AdminCakePage />} />
         <Route path="/admin/orders" element={<AdminOrderPage />} />
         <Route path="/admin/approvals" element={<AdminApprovalPage />} />
+        <Route path="/age-requirements" element={<AgeRequirements />} />
       </Routes>
     </BrowserRouter>
   );
